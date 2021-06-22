@@ -1,5 +1,8 @@
+const fs = require("fs");
 const axios = require("axios");
 class Busquedas {
+  historal = [];
+  dbPath = "./db/database.json";
   constructor() {}
   get paramsMapbox() {
     return {
@@ -12,7 +15,7 @@ class Busquedas {
   get paramsWeather() {
     return {
       appid: process.env.OPENWEATHER_KEY,
-      units: 'metric',
+      units: "metric",
       lang: "es",
     };
   }
@@ -36,30 +39,44 @@ class Busquedas {
     }
   }
 
-  async climaLugar( lat, lon ) {
-
+  async climaLugar(lat, lon) {
     try {
-        
-        const instance = axios.create({
-            baseURL: `https://api.openweathermap.org/data/2.5/weather`,
-            params: { ...this.paramsWeather, lat, lon }
-        })
+      const instance = axios.create({
+        baseURL: `https://api.openweathermap.org/data/2.5/weather`,
+        params: { ...this.paramsWeather, lat, lon },
+      });
 
-        const resp = await instance.get();
-        const { weather, main } = resp.data;
+      const resp = await instance.get();
+      const { weather, main } = resp.data;
 
-        return {
-            desc: weather[0].description,
-            min: main.temp_min,
-            max: main.temp_max,
-            temp: main.temp
-        }
-
+      return {
+        desc: weather[0].description,
+        min: main.temp_min,
+        max: main.temp_max,
+        temp: main.temp,
+      };
     } catch (error) {
-        console.log(error);
+      console.log(error);
     }
+  }
+  agregarHistorial(lugar = "") {
+    if (this.historal.includes(lugar.toLocaleLowerCase())) {
+      return;
+    }
+    this.historal.unshift(lugar.toLocaleLowerCase());
 
-}
+    //Grabr en DB.
+    this.guardarDB();
+  }
+
+  guardarDB() {
+    const payload = {
+      historial: this.historal,
+    };
+    fs.writeFileSync(this.dbPath, JSON.stringify(payload));
+  }
+
+  leerDB() {}
 }
 
 module.exports = Busquedas;
